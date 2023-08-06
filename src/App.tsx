@@ -1,35 +1,79 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useNavigate } from "react-router-dom";
+import "./App.css";
+import {
+  Button,
+  Flex,
+  FormControl,
+  FormLabel,
+  Grid,
+  Input,
+} from "@chakra-ui/react";
+import { FormEvent, useState } from "react";
+import MainLayout from "./layout/Main";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    flipReason: "",
+    flipCount: 1,
+    player1Username: "",
+  });
+
+  const handleInputChange = (event: FormEvent<HTMLInputElement>) => {
+    const { name, value } = event.target as HTMLInputElement;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleCreateGameSession = async () => {
+    console.log(formData);
+    navigate("/83jd3d");
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <MainLayout>
+      <Flex alignItems={"center"} justifyContent={"center"}>
+        <Grid onSubmit={handleCreateGameSession} rowGap={4} as="form">
+          <FormControl>
+            <FormLabel>What are you flipping for?</FormLabel>
+            <Input
+              type="text"
+              name="flipReason"
+              value={formData.flipReason}
+              onChange={handleInputChange}
+              required
+            />
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Number of coin flips required?</FormLabel>
+            <Input
+              type="number"
+              min={1}
+              max={5}
+              name="flipCount"
+              value={formData.flipCount}
+              onChange={handleInputChange}
+              required
+            />
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Enter a username for this session</FormLabel>
+            <Input
+              type="text"
+              required
+              name={"player1Username"}
+              value={formData.player1Username}
+              onChange={handleInputChange}
+            />
+          </FormControl>
+
+          <Button type="submit">Create Game Session</Button>
+        </Grid>
+      </Flex>
+    </MainLayout>
+  );
 }
 
-export default App
+export default App;
