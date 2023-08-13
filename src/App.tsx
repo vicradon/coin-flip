@@ -7,16 +7,16 @@ import {
   FormLabel,
   Grid,
   Input,
+  useToast,
 } from "@chakra-ui/react";
 import { FormEvent, useState } from "react";
 import MainLayout from "./layout/Main";
+import http from "./services/http";
 
 function App() {
   const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
     flipReason: "",
-    flipCount: 1,
     player1Username: "",
   });
 
@@ -25,9 +25,24 @@ function App() {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleCreateGameSession = async () => {
-    console.log(formData);
-    navigate("/83jd3d");
+  const toast = useToast();
+
+  const handleCreateGameSession = async (event: FormEvent) => {
+    event.preventDefault();
+    try {
+      const { data } = await http.post("CreateGameSession", {
+        username: formData.player1Username,
+        flip_reason: formData.flipReason,
+      });
+
+      navigate(data.gamecode);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "";
+      toast({
+        status: "error",
+        title: `An error occured: ${errorMessage}`,
+      });
+    }
   };
 
   return (
@@ -40,19 +55,6 @@ function App() {
               type="text"
               name="flipReason"
               value={formData.flipReason}
-              onChange={handleInputChange}
-              required
-            />
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Number of coin flips required?</FormLabel>
-            <Input
-              type="number"
-              min={1}
-              max={5}
-              name="flipCount"
-              value={formData.flipCount}
               onChange={handleInputChange}
               required
             />
