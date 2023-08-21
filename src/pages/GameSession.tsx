@@ -7,6 +7,8 @@ import {
   Input,
   Flex,
   Box,
+  Link,
+  useToast,
 } from "@chakra-ui/react";
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -23,6 +25,7 @@ interface Game {
 
 export const GameSession = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const { gamecode } = useParams();
   const [game, setGame] = useState<Game>({
     id: "",
@@ -40,6 +43,13 @@ export const GameSession = () => {
         const { data } = await http.post(`/FetchGameSession`, {
           gamecode,
         });
+        if (!data.game) {
+          toast({
+            title: "No such game exists",
+            status: "error",
+          });
+          return;
+        }
         setGame(data.game);
         if (data.game.player2Username) {
           setPlayer2HasJoined(true);
@@ -77,7 +87,35 @@ export const GameSession = () => {
   const renderGameStatus = () => {
     if (isPlayerOne) {
       if (!player2HasJoined) {
-        return <Text>Waiting for other player</Text>;
+        return (
+          <Box>
+            <Text>Waiting for other player</Text>
+
+            <Flex
+              alignItems={"center"}
+              flexDirection={"column"}
+              rowGap={2}
+              my={12}
+            >
+              <Text>Share this link to your partner in flip</Text>
+              <Flex alignItems={"center"} columnGap={4}>
+                <Link>{window.location.href}</Link>
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast({
+                      title: "Copied to clipboard",
+                      status: "success",
+                    });
+                  }}
+                  size={"sm"}
+                >
+                  Copy
+                </Button>
+              </Flex>
+            </Flex>
+          </Box>
+        );
       } else if (game.winner) {
         return (
           <Text>{game.winner === "player1" ? "You Win!" : "You Lose!"}</Text>
