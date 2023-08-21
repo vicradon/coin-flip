@@ -1,30 +1,149 @@
-import { Text } from "@chakra-ui/react";
-import { FC, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import {
+  Button,
+  Text,
+  FormControl,
+  FormLabel,
+  Grid,
+  Input,
+  Flex,
+  Box,
+} from "@chakra-ui/react";
+import { FormEvent, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "../layout/Main";
 import http from "../services/http";
-interface IGameSessionProps {}
 
-export const GameSession: FC<IGameSessionProps> = () => {
+interface Game {
+  id: string;
+  flip_reason: string;
+  player1Username: string;
+  player2Username?: string;
+  winner?: "player1" | "player2";
+}
+
+export const GameSession = () => {
+  const navigate = useNavigate();
   const { gamecode } = useParams();
-  const [countdownTimer, setCountdownTimer] = useState(3);
+  const [game, setGame] = useState<Game>({
+    id: "",
+    flip_reason: "",
+    player1Username: "",
+  });
+  const [player2HasJoined, setPlayer2HasJoined] = useState(false);
+  const [player2Username, setPlayer2Username] = useState("");
 
-  // call the game in storage to know
+  const isPlayerOne = Number(localStorage.getItem("is_player_one"));
+
   useEffect(() => {
-    http.get("/FetchGameSession");
+    const fetchGameSession = async () => {
+      try {
+        const { data } = await http.post(`/FetchGameSession`, {
+          gamecode,
+        });
+        setGame(data.game);
+        if (data.game.player2Username) {
+          setPlayer2HasJoined(true);
+        }
+
+        if (data.game.winner) {
+          clearInterval(interval);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchGameSession();
+    const interval = setInterval(fetchGameSession, 5000);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
-  useEffect(() => {
-    if (countdownTimer === 0) {
-      // do stuff
+  const joinGameSession = async (event: FormEvent) => {
+    try {
+      event.preventDefault();
+      await http.post("/JoinGameSession", {
+        gamecode,
+        player2Username,
+      });
+      setPlayer2HasJoined(true);
+    } catch (error) {
+      console.log(error);
     }
-  }, [countdownTimer]);
+  };
+
+  const renderGameStatus = () => {
+    if (isPlayerOne) {
+      if (!player2HasJoined) {
+        return <Text>Waiting for other player</Text>;
+      } else if (game.winner) {
+        return (
+          <Text>{game.winner === "player1" ? "You Win!" : "You Lose!"}</Text>
+        );
+      } else {
+        return <Text>Coin flip in progress</Text>;
+      }
+    } else {
+      if (player2HasJoined) {
+        if (game.winner) {
+          return (
+            <Text>{game.winner === "player2" ? "You Win!" : "You Lose!"}</Text>
+          );
+        } else {
+          return <Text>Coin flip in progress</Text>;
+        }
+      } else {
+        return (
+          <Flex justifyContent="center">
+            <Grid
+              width={{ base: "300px", md: "400px" }}
+              onSubmit={joinGameSession}
+              rowGap={4}
+              as="form"
+            >
+              <FormControl>
+                <FormLabel>Enter a username for this session</FormLabel>
+                <Input
+                  type="text"
+                  required
+                  name="player2Username"
+                  value={player2Username}
+                  onChange={({ target }) => setPlayer2Username(target.value)}
+                />
+              </FormControl>
+              <Button type="submit">Join Game Session</Button>
+            </Grid>
+          </Flex>
+        );
+      }
+    }
+  };
+
+  const playAgain = () => {
+    localStorage.clear();
+    navigate("/");
+  };
 
   return (
     <MainLayout>
-      {gamecode}
+      <Box mb={8}>
+        <Text>
+          Flipping coin to settle: <b>{game.flip_reason}</b>
+        </Text>
+        <Text>
+          You are <b> {isPlayerOne ? "HEADS" : "TAILS"}</b>
+        </Text>
+      </Box>
 
-      <Text>Waiting for other player</Text>
+      {renderGameStatus()}
+
+      {game.winner && (
+        <Box my={8}>
+          <Button onClick={playAgain}>Play Again</Button>
+        </Box>
+      )}
     </MainLayout>
   );
 };

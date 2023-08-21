@@ -9,7 +9,7 @@ import {
   Input,
   useToast,
 } from "@chakra-ui/react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import MainLayout from "./layout/Main";
 import http from "./services/http";
 
@@ -19,6 +19,10 @@ function App() {
     flipReason: "",
     player1Username: "",
   });
+
+  useEffect(() => {
+    localStorage.clear();
+  }, []);
 
   const handleInputChange = (event: FormEvent<HTMLInputElement>) => {
     const { name, value } = event.target as HTMLInputElement;
@@ -31,9 +35,11 @@ function App() {
     event.preventDefault();
     try {
       const { data } = await http.post("CreateGameSession", {
-        username: formData.player1Username,
+        player1Username: formData.player1Username,
         flip_reason: formData.flipReason,
       });
+
+      localStorage.setItem("is_player_one", "1");
 
       navigate(data.gamecode);
     } catch (error) {
