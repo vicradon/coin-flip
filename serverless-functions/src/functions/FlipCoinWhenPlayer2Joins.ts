@@ -22,7 +22,7 @@ export async function FlipCoinWhenPlayer2Joins(
     if (doc["player2Username"]) {
       // flip coin here
 
-      doc["winner"] = coinFlipIsHeads ? "player1" : "player2";
+      doc["winner"] = coinFlipIsHeads() ? "player1" : "player2";
 
       await dbContainer.item(doc["id"]).replace(doc);
     }
